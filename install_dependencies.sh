@@ -17,7 +17,7 @@ apt install -y \
     network-manager network-manager-gnome pamixer thunar thunar-archive-plugin \
     thunar-volman file-roller lxappearance dialog mtools dosfstools avahi-daemon \
     acpi acpid gvfs-backends xfce4-power-manager pavucontrol pamixer pulsemixer \
-    feh fonts-recommended fonts-font-awesome fonts-terminus ttf-mscorefonts-installer \
+    feh fonts-recommended fonts-font-awesome fonts-terminus \
     papirus-icon-theme exa flameshot qimgv rofi dunst libnotify-bin xdotool unzip \
     libnotify-dev geany geany-plugin-addons geany-plugin-git-changebar \
     geany-plugin-spellcheck geany-plugin-treebrowser geany-plugin-markdown \
