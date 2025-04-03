@@ -67,19 +67,19 @@ setup_bspwm_config() {
     echo "Moving configuration files..."
     mkdir -p "$CONFIG_DIR"
     cp -r "$CLONED_DIR/bspwmrc" "$CONFIG_DIR/" || echo "Warning: Failed to copy bspwmrc."
-	for dir in dunst fonts picom polybar rofi scripts sxhkd wallpaper; do
-		cp -r "$CLONED_DIR/$dir" "$CONFIG_DIR/" || echo "Warning: Failed to copy $dir."
-	done
+    for dir in dunst fonts picom polybar rofi scripts sxhkd wallpaper; do
+        cp -r "$CLONED_DIR/$dir" "$CONFIG_DIR/" || echo "Warning: Failed to copy $dir."
+    done
     echo "BSPWM configuration files copied successfully."
 }
 
 # ========================================
 # Package Installation Section
 # ========================================
-# Install required packages (removed firefox-esr, geany and its plugins, and nala)
+# Install required packages (removed firefox-esr, geany and its plugins, nala, fastfetch, and wezterm)
 install_packages() {
     echo "Installing required packages..."
-    sudo apt-get install -y xorg xorg-dev xbacklight xbindkeys xvkbd xinput build-essential bspwm sxhkd polybar network-manager-gnome pamixer thunar thunar-archive-plugin thunar-volman lxappearance dialog mtools avahi-daemon acpi acpid gvfs-backends xfce4-power-manager pavucontrol pulsemixer feh fonts-recommended fonts-font-awesome fonts-terminus exa suckless-tools ranger redshift flameshot qimgv rofi dunst libnotify-bin xdotool unzip libnotify-dev pipewire-audio micro xdg-user-dirs-gtk tilix lightdm || echo "Warning: Package installation failed."
+    sudo apt-get install -y xorg xorg-dev xbacklight xbindkeys xvkbd xinput build-essential bspwm sxhkd polybar network-manager-gnome pamixer thunar thunar-archive-plugin thunar-volman lxappearance dialog mtools avahi-daemon acpi acpid gvfs-backends xfce4-power-manager pavucontrol pulsemixer feh fonts-recommended fonts-font-awesome fonts-terminus exa suckless-tools ranger redshift flameshot qimgv rofi dunst libnotify-bin xdotool unzip libnotify-dev pipewire-audio micro xdg-user-dirs-gtk tilix || echo "Warning: Package installation failed."
     echo "Package installation completed."
 }
 
@@ -112,60 +112,24 @@ command_exists() {
 
 install_reqs() {
     echo "Updating package lists and installing required dependencies..."
-    sudo apt-get install -y cmake meson ninja-build curl pkg-config || { echo "Package installation failed."; exit 1; }
+    sudo apt-get install -y meson ninja-build curl pkg-config || { echo "Package installation failed."; exit 1; }
 }
 
 # ========================================
 # Picom Installation
 # ========================================
 install_ftlabs_picom() {
-	if command_exists picom; then
+    if command_exists picom; then
         echo "Picom is already installed. Skipping installation."
         return
     fi
-	sudo apt-get install -y libconfig-dev libdbus-1-dev libegl-dev libev-dev libgl-dev libepoxy-dev libpcre2-dev libpixman-1-dev libx11-xcb-dev libxcb1-dev libxcb-composite0-dev libxcb-damage0-dev libxcb-dpms0-dev libxcb-glx0-dev libxcb-image0-dev libxcb-present-dev libxcb-randr0-dev libxcb-render0-dev libxcb-render-util0-dev libxcb-shape0-dev libxcb-util-dev libxcb-xfixes0-dev libxext-dev meson ninja-build uthash-dev
-	
-    git clone https://github.com/FT-Labs/picom "$INSTALL_DIR/picom" || die "Failed to clone Picom."
-    cd "$INSTALL_DIR/picom"
+    sudo apt-get install -y libconfig-dev libdbus-1-dev libegl-dev libev-dev libgl-dev libepoxy-dev libpcre2-dev libpixman-1-dev libx11-xcb-dev libxcb1-dev libxcb-composite0-dev libxcb-damage0-dev libxcb-dpms0-dev libxcb-glx0-dev libxcb-image0-dev libxcb-present-dev libxcb-randr0-dev libxcb-render0-dev libxcb-render-util0-dev libxcb-shape0-dev libxcb-util-dev libxcb-xfixes0-dev libxext-dev meson ninja-build uthash-dev
+
+    git clone https://github.com/FT-Labs/picom "$INSTALL_DIR/picom" || { echo "Failed to clone Picom."; exit 1; }
+    cd "$INSTALL_DIR/picom" || exit 1
     meson setup --buildtype=release build
     ninja -C build
     sudo ninja -C build install
-}
-
-# ========================================
-# Fastfetch Installation
-# ========================================
-install_fastfetch() {
-	if command_exists fastfetch; then
-        echo "Fastfetch is already installed. Skipping installation."
-        return
-    fi	
-	
-    echo "Installing Fastfetch..."
-    git clone https://github.com/fastfetch-cli/fastfetch "$INSTALL_DIR/fastfetch" || { echo "Failed to clone Fastfetch repository."; return 1; }
-    cd "$INSTALL_DIR/fastfetch" || { echo "Failed to access Fastfetch directory."; return 1; }
-    cmake -S . -B build || { echo "CMake configuration failed."; return 1; }
-    cmake --build build || { echo "Build process failed."; return 1; }
-    sudo mv build/fastfetch /usr/local/bin/ || { echo "Failed to move Fastfetch binary to /usr/local/bin/."; return 1; }
-    echo "Fastfetch installation complete."
-    
-	echo "Setting up fastfetch configuration..."
-	
-	# Ensure the target directory exists
-	mkdir -p "$HOME/.config/fastfetch"
-	
-	# Clone the repository (shallow, sparse) and copy only the fastfetch config folder
-	git clone --depth=1 --filter=blob:none --sparse "https://github.com/drewgrif/jag_dots.git" "$HOME/tmp_jag_dots"
-	cd "$HOME/tmp_jag_dots"
-	git sparse-checkout set .config/fastfetch
-	
-	# Move the folder into place
-	mv .config/fastfetch "$HOME/.config/"
-	
-	# Cleanup
-	cd && rm -rf "$HOME/tmp_jag_dots"
-	
-	echo "Fastfetch configuration setup complete."
 }
 
 # ========================================
@@ -216,13 +180,13 @@ install_theming() {
     echo "Installing GTK and Icon themes..."
 
     # GTK Theme Installation
-    git clone "$GTK_THEME" "$INSTALL_DIR/Orchis-theme" || die "Failed to clone Orchis theme."
-    cd "$INSTALL_DIR/Orchis-theme" || die "Failed to enter Orchis theme directory."
+    git clone "$GTK_THEME" "$INSTALL_DIR/Orchis-theme" || { echo "Failed to clone Orchis theme."; exit 1; }
+    cd "$INSTALL_DIR/Orchis-theme" || exit 1
     yes | ./install.sh -c dark -t teal orange --tweaks black
 
     # Icon Theme Installation
-    git clone "$ICON_THEME" "$INSTALL_DIR/Colloid-icon-theme" || die "Failed to clone Colloid icon theme."
-    cd "$INSTALL_DIR/Colloid-icon-theme" || die "Failed to enter Colloid icon theme directory."
+    git clone "$ICON_THEME" "$INSTALL_DIR/Colloid-icon-theme" || { echo "Failed to clone Colloid icon theme."; exit 1; }
+    cd "$INSTALL_DIR/Colloid-icon-theme" || exit 1
     ./install.sh -t teal orange -s default gruvbox everforest
 
     echo "Theming installation complete."
@@ -276,26 +240,49 @@ EOF
 # .bashrc Replacement Prompt
 # ========================================
 replace_bashrc() {
-echo "Would you like to overwrite your current .bashrc with the justaguylinux .bashrc? (y/n)"
-read response
+    echo "Would you like to overwrite your current .bashrc with the justaguylinux .bashrc? (y/n)"
+    read response
 
-if [[ "$response" =~ ^[Yy]$ ]]; then
-    if [[ -f ~/.bashrc ]]; then
-        mv ~/.bashrc ~/.bashrc.bak
-        echo "Your current .bashrc has been moved to .bashrc.bak"
-    fi
-    wget -O ~/.bashrc https://raw.githubusercontent.com/drewgrif/jag_dots/main/.bashrc
-    source ~/.bashrc
-    if [[ $? -eq 0 ]]; then
-        echo "justaguylinux .bashrc has been copied to ~/.bashrc"
+    if [[ "$response" =~ ^[Yy]$ ]]; then
+        if [[ -f ~/.bashrc ]]; then
+            mv ~/.bashrc ~/.bashrc.bak
+            echo "Your current .bashrc has been moved to .bashrc.bak"
+        fi
+        wget -O ~/.bashrc https://raw.githubusercontent.com/drewgrif/jag_dots/main/.bashrc
+        source ~/.bashrc
+        if [[ $? -eq 0 ]]; then
+            echo "justaguylinux .bashrc has been copied to ~/.bashrc"
+        else
+            echo "Failed to download justaguylinux .bashrc"
+        fi
+    elif [[ "$response" =~ ^[Nn]$ ]]; then
+        echo "No changes have been made to ~/.bashrc"
     else
-        echo "Failed to download justaguylinux .bashrc"
+        echo "Invalid input. Please enter 'y' or 'n'."
     fi
-elif [[ "$response" =~ ^[Nn]$ ]]; then
-    echo "No changes have been made to ~/.bashrc"
-else
-    echo "Invalid input. Please enter 'y' or 'n'."
-fi
+}
+
+# ========================================
+# Minimal GDM3 Installation Section
+# ========================================
+# Function to check if a service is active and enabled
+service_active_and_enabled() {
+    local service="$1"
+    sudo systemctl is-active --quiet "$service" && sudo systemctl is-enabled --quiet "$service"
+}
+
+# Check if GDM is installed and enabled
+check_gdm() {
+    service_active_and_enabled gdm
+}
+
+# Function to install and enable minimal GDM3
+install_gdm() {
+    echo "Installing minimal GDM3..."
+    sudo apt update
+    sudo apt install -y --no-install-recommends gdm3
+    sudo systemctl enable gdm3
+    echo "GDM3 has been installed and enabled."
 }
 
 # ========================================
@@ -310,10 +297,16 @@ enable_services
 setup_user_dirs
 install_reqs
 install_ftlabs_picom
-install_fastfetch
 install_fonts
 install_theming
 change_theming
 replace_bashrc
+
+# Minimal GDM3 installation check and install if not already enabled
+if check_gdm; then
+    echo "GDM3 is already installed and enabled."
+else
+    install_gdm
+fi
 
 echo "All installations completed successfully!"
